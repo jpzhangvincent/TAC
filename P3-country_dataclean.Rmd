@@ -1,0 +1,81 @@
+---
+title: "PAC"
+author: "Vincent Zhang"
+date: "February 4, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(caret)
+library(stringr)
+```
+
+```{r}
+food <- read.csv("ffclean6.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+head(food)
+```
+
+```{r}
+colnames(food)
+```
+
+# Feature engineering
+```{r}
+ct_pattern <- "United States|United Kingdom|Spain|Germany"
+quan_pattern <- "oz|g|cl|lb|ml|gr"
+#food <- food %>% filter(str_detect(countries_en, ct_pattern))
+food[food$packaging=="", "packaging"] = "NOPACKED"
+
+package_labels = names(sort(table(food$packaging),decreasing = TRUE)[1:10])
+package_pattern <- do.call(paste, c(as.list(package_labels), sep="|"))
+brands_labels = names(sort(table(food$brands),decreasing = TRUE)[1:10])
+brands_pattern <- do.call(paste, c(as.list(brands_labels), sep="|"))
+catgory_labels = names(sort(table(food$main_category_en),decreasing = TRUE)[1:10])
+category_pattern <- do.call(paste, c(as.list(catgory_labels), sep="|"))
+
+food_p3 <- food %>% filter(str_detect(countries_en, ct_pattern)) %>% 
+  mutate(country_cleaned = str_extract(countries_en, ct_pattern)) %>% 
+  mutate(quantity = tolower(quantity)) %>% 
+  mutate(quan_unit = str_extract(quantity, quan_pattern)) %>% 
+  mutate(packaging_cleaned = str_extract(packaging, package_pattern)) %>% 
+  mutate(brands_cleaned = str_extract(brands, brands_pattern)) %>% 
+  mutate(catgory_cleaned = str_extract(main_category_en, category_pattern))
+```
+
+
+
+# Data Preparation
+```{r}
+num_cols = names(which(sapply(food_p3,is.numeric)==TRUE))
+num_cols2 = c(num_cols)[2:length(num_cols)]
+columns <- c("country_cleaned","brands_cleaned", "packaging_cleaned", "catgory_cleaned", "quan_unit" , num_cols2)
+```
+
+```{r}
+data = food_p3[columns]
+```
+
+```{r}
+head(data)
+```
+
+```{r}
+write.csv(file = "food_p3.csv", x = data, row.names = FALSE)
+```
+
+```{r}
+num_cols = names(which(sapply(food_p3,is.numeric)==TRUE))
+c(num_cols)[2:length(num_cols)]
+```
+
+
+

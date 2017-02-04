@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+data = read.csv('ffclean6.csv', header = TRUE)
+
+#Q4 Time series:
+require(forecast)
+library('dplyr')
+article_data = data
+article_data$created_datetime = gsub('([201[0-9]-[0-9][0-9]-[0-9][0-9]).*', '\\1',article_data$created_datetime)
+head(article_data$created_datetime)
+```
+
+```{r}
+article= article_data %>%
+    group_by(created_datetime) %>%
+    summarise(count = n())
+
+article$lag1 = lag(article$count)
+article = article[3:nrow(article),]
+article$growth = (1+(article$count - article$lag1)/article$lag1)^(1/3)
+```
+```{r}
+ts.plot(article$growth)
+```
+```{r}
+hist(article$growth,breaks = 50)
+```
+
+```{r}
+decompose(article$growth)
+# no seasonality
+```
+
+```{r}
+arima.model = auto.arima(article$growth, ic="bic", stationary=FALSE, stepwise = FALSE)
+summary(arima.model)
+```
+```{r}
+pacf(arima.model$residuals)
+```
+
+```{r}
+forecast.data = forecast.Arima(arima.model,h=365)
+plot(forecast.data)
+```
+
